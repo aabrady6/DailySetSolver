@@ -5,9 +5,9 @@ import time
 import cv2
 import numpy as np
 import requests
+from bs4 import BeautifulSoup
 
 from game.cards import Card, Colour, Fill, Shape
-from bs4 import BeautifulSoup
 
 FILEPATH = "tmp/image_downloads"
 
@@ -30,7 +30,7 @@ def download_images(url):
     soup = BeautifulSoup(resp.text, features="html.parser")
     img_tags = soup.find_all("img")
     img_srcs = []
-    
+
     for img in img_tags:
         try:
             if img["name"].startswith("card") and img["src"].endswith(".png"):
@@ -41,7 +41,7 @@ def download_images(url):
     for name, src in img_srcs:
         img_url = "https://www.setgame.com/" + src
         img_data = requests.get(img_url).content
-        
+
         filename = f"{name}.png"
         with open(os.path.join(FILEPATH, filename), "wb") as f:
             f.write(img_data)
