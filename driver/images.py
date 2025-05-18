@@ -5,6 +5,8 @@ import time
 import cv2
 import numpy as np
 import requests
+
+from game.cards import Card, Colour, Fill, Shape
 from bs4 import BeautifulSoup
 
 FILEPATH = "tmp/image_downloads"
@@ -56,7 +58,7 @@ def dummy_download(url):
             f.write(img_data)
 
 
-def analyze_images():
+def analyze_images(debug=False):
     print("Analyzing Images...")
     start = time.perf_counter()
 
@@ -72,16 +74,14 @@ def analyze_images():
             fill = classify_fill(img)
             shape = classify_shape(img)
 
-            cards[img_file] = {
-                "colour": colour,
-                "count": count,
-                "fill": fill,
-                "shape": shape
-            }
-            # print(img_file, colour, count, fill, shape)
-            # cv2.imshow("Analyzed Image", img)
-            # cv2.waitKey(0)
-            # cv2.destroyAllWindows()
+            card_obj = Card(colour, count, fill, shape)
+            cards[img_file] = card_obj
+
+            if debug == True:
+                print(img_file, colour.name, count, fill.name, shape.name)
+                cv2.imshow("Analyzed Image", img)
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
 
     elapsed = time.perf_counter() - start
     print(f"Analyzed Cards in {elapsed:.2f} seconds.")
@@ -95,11 +95,11 @@ def classify_colour(img):
 
     h = mean[0]
     if h < 15 or h > 160:
-        return "RED"
+        return Colour.RED
     elif 30 < h < 90:
-        return "GREEN"
+        return Colour.GREEN
     elif 120 < h < 160:
-        return "PURPLE"
+        return Colour.PURPLE
     else:
         return "unknown"
 
@@ -144,11 +144,11 @@ def classify_fill(img):
 
     result = ""
     if avg_fill > 0.95:
-        result = "SOLID"
+        result = Fill.SOLID
     elif avg_fill > 0.5:
-        result = "STRIPED"
+        result = Fill.STRIPED
     else:
-        result = "OPEN"
+        result = Fill.OPEN
 
     return result
 
@@ -173,8 +173,8 @@ def classify_shape(img):
     vertices = len(approx)
 
     if vertices <= 6 and solidity > 0.9:
-        return "DIAMOND"
+        return Shape.DIAMOND
     elif solidity > 0.95:
-        return "OVAL"
+        return Shape.OVAL
     else:
-        return "SQUIGGLE"
+        return Shape.SQUIGGLE
