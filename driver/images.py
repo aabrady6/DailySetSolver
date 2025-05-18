@@ -28,19 +28,21 @@ def download_images(url):
     soup = BeautifulSoup(resp.text, features="html.parser")
     img_tags = soup.find_all("img")
     img_srcs = []
+    
     for img in img_tags:
         try:
             if img["name"].startswith("card") and img["src"].endswith(".png"):
-                img_srcs.append(img["src"])
-        except:
-            pass
+                img_srcs.append((img["name"], img["src"]))
+        except KeyError:
+            continue
 
-    for idx, src in enumerate(img_srcs):
+    for name, src in img_srcs:
         img_url = "https://www.setgame.com/" + src
         img_data = requests.get(img_url).content
-        with open(os.path.join(FILEPATH, f"card_{idx}.png"), "wb") as f:
+        
+        filename = f"{name}.png"
+        with open(os.path.join(FILEPATH, filename), "wb") as f:
             f.write(img_data)
-            idx += 1
 
     elapsed = time.perf_counter() - start
     print(f"Retrieved Cards in {elapsed:.2f} seconds.")
@@ -50,13 +52,15 @@ def dummy_download(url):
     for i in range(1, 82):
         img_url = f"https://www.setgame.com/sites/all/modules/setgame_set/assets/images/new/{i}.png"
         img_data = requests.get(img_url).content
-        with open(os.path.join(FILEPATH, f"card_{i}.png"), "wb") as f:
+        with open(os.path.join(FILEPATH, f"card{i}.png"), "wb") as f:
             f.write(img_data)
 
 
 def analyze_images():
     print("Analyzing Images...")
     start = time.perf_counter()
+
+    cards = {}
 
     for img_file in os.listdir(FILEPATH):
         if img_file.endswith(".png"):
@@ -68,13 +72,20 @@ def analyze_images():
             fill = classify_fill(img)
             shape = classify_shape(img)
 
-            print(img_file, colour, count, fill, shape)
-            cv2.imshow("Analyzed Image", img)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+            cards[img_file] = {
+                "colour": colour,
+                "count": count,
+                "fill": fill,
+                "shape": shape
+            }
+            # print(img_file, colour, count, fill, shape)
+            # cv2.imshow("Analyzed Image", img)
+            # cv2.waitKey(0)
+            # cv2.destroyAllWindows()
 
     elapsed = time.perf_counter() - start
     print(f"Analyzed Cards in {elapsed:.2f} seconds.")
+    return cards
 
 
 def classify_colour(img):
@@ -84,11 +95,11 @@ def classify_colour(img):
 
     h = mean[0]
     if h < 15 or h > 160:
-        return "red"
+        return "RED"
     elif 30 < h < 90:
-        return "green"
+        return "GREEN"
     elif 120 < h < 160:
-        return "purple"
+        return "PURPLE"
     else:
         return "unknown"
 
@@ -133,11 +144,11 @@ def classify_fill(img):
 
     result = ""
     if avg_fill > 0.95:
-        result = "solid"
+        result = "SOLID"
     elif avg_fill > 0.5:
-        result = "striped"
+        result = "STRIPED"
     else:
-        result = "open"
+        result = "OPEN"
 
     return result
 
@@ -162,8 +173,8 @@ def classify_shape(img):
     vertices = len(approx)
 
     if vertices <= 6 and solidity > 0.9:
-        return "diamond"
+        return "DIAMOND"
     elif solidity > 0.95:
-        return "oval"
+        return "OVAL"
     else:
-        return "squiggle"
+        return "SQUIGGLE"
