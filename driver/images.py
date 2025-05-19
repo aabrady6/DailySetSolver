@@ -109,7 +109,7 @@ def classify_count(img):
     _, thresh = cv2.threshold(gray, 220, 255, cv2.THRESH_BINARY_INV)
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     shapes = [cnt for cnt in contours if cv2.contourArea(cnt) > 500]
-    return len(shapes)
+    return len(shapes) - 1
 
 
 def classify_fill(img):
